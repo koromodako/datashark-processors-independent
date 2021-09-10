@@ -1,8 +1,9 @@
 """Datashark Template Plugin
 """
-from typing import List
+from typing import Dict
+from pathlib import Path
 from hashlib import new as new_md, algorithms_guaranteed
-from aiofile import async_open
+from aiofiles import open as async_open
 from datashark_core.meta import ProcessorMeta
 from datashark_core.logging import LOGGING_MANAGER
 from datashark_core.processor import ProcessorInterface, ProcessorError
@@ -52,37 +53,38 @@ class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
         """process a single file"""
         md_dct = {hasher: new_md(hasher) for hasher in sorted(hashers)}
         async with async_open(str(filepath), 'rb') as aiofstream_in:
-            async for chunk in aiofstream_in.iter_chunked(1024*1024):
+            while True:
+                chunk = await aiofstream_in.read(1024 * 1024)
+                if not chunk:
+                    break
                 for md_ in md_dct.values():
                     md_.update(chunk)
         return [md_dct[hasher].hexdigest() for hasher in sorted(hashers)]
 
-    async def _run(self, arguments: List[ProcessorArgument]):
+    async def _run(self, arguments: Dict[str, ProcessorArgument]):
         """Process a file using hashers"""
         # retrieve workdir and check access to it
-        workdir = self.config.get('datashark.agent.workdir')
+        workdir = self.config.get('datashark.agent.workdir', type=Path)
         if not workdir.is_dir():
             raise ProcessorError("agent-side workdir not found!")
-        # retrieve arguments
-        hashers = None
-        filepath = None
-        output_file = None
-        for proc_arg in arguments:
-            if proc_arg.name == 'hashers':
-                hashers = list(
-                    set(proc_arg.get_value().split(',')).intersection(algorithms_guaranteed)
-                )
-                if not hashers:
-                    raise ProcessorError("failed to find a valid hasher!")
-                continue
-            if proc_arg.name == 'filepath':
-                filepath = prepend_workdir(workdir, proc_arg.get_value())
-                if not filepath.is_file() and not filepath.is_dir():
-                    raise ProcessorError(f"filepath {filepath} not found!")
-                continue
-            if proc_arg.name == 'output_file':
-                output_file = prepend_workdir(workdir, proc_arg.get_value())
-                continue
+        # load and check hashers argument
+        hashers = list(
+            set(arguments.get('hashers').get_value().split(',')).intersection(
+                algorithms_guaranteed
+            )
+        )
+        if not hashers:
+            raise ProcessorError("failed to find a valid hasher!")
+        # load and check filepath argument
+        filepath = prepend_workdir(
+            workdir, arguments.get('filepath').get_value()
+        )
+        if not filepath.is_file() and not filepath.is_dir():
+            raise ProcessorError(f"filepath {filepath} not found!")
+        # load output file argument
+        output_file = prepend_workdir(
+            workdir, arguments.get('output_file').get_value()
+        )
         # create output file
         output_file.parent.mkdir(parents=True, exist_ok=True)
         async with async_open(str(output_file), 'w') as aiofstream_out:
@@ -103,6 +105,6 @@ class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
                 # compute file relative path or name
                 fpath = file.relative_to(filepath) if is_dir else file.stem
                 # compute file digests
-                hexdigests = ','.join(self.__process_file(hashers, file))
+                hexdigests = ','.join(await self.__process_file(hashers, file))
                 # write line to output file
-                await aiofstream_out.write(f"{hexdigests},{fpath}\n")
+                await aiofstream_out.write(f'{hexdigests},"{fpath}"\n')
