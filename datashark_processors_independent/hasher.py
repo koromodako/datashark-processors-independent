@@ -15,7 +15,7 @@ LOGGER = LOGGING_MANAGER.get_logger(NAME)
 
 
 class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
-    """Hasher of a processor"""
+    """Hasher processor"""
 
     NAME = NAME
     SYSTEM = System.INDEPENDENT
