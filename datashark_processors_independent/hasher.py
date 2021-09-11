@@ -72,10 +72,6 @@ class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
 
     async def _run(self, arguments: Dict[str, ProcessorArgument]):
         """Process a file using hashers"""
-        # retrieve workdir and check access to it
-        workdir = self.config.get('datashark.agent.workdir', type=Path)
-        if not workdir.is_dir():
-            raise ProcessorError("agent-side workdir not found!")
         # load and check hashers argument
         hashers = list(
             set(arguments.get('hashers').get_value().split(',')).intersection(
@@ -86,13 +82,13 @@ class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
             raise ProcessorError("failed to find a valid hasher!")
         # load and check filepath argument
         filepath = prepend_workdir(
-            workdir, arguments.get('filepath').get_value()
+            self.config, arguments.get('filepath').get_value()
         )
         if not filepath.is_file() and not filepath.is_dir():
             raise ProcessorError(f"filepath {filepath} not found!")
         # load output file argument
         output_file = prepend_workdir(
-            workdir, arguments.get('output_file').get_value()
+            self.config, arguments.get('output_file').get_value()
         )
         # create output file
         output_file.parent.mkdir(parents=True, exist_ok=True)
