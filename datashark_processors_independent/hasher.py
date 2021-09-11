@@ -3,16 +3,25 @@
 from typing import Dict
 from pathlib import Path
 from hashlib import new as new_md, algorithms_guaranteed
+from textwrap import indent
 from aiofiles import open as async_open
 from datashark_core.meta import ProcessorMeta
 from datashark_core.logging import LOGGING_MANAGER
 from datashark_core.processor import ProcessorInterface, ProcessorError
-from datashark_core.model.api import Kind, System, ProcessorArgument
+from datashark_core.model.api import (
+    INDENT_UNIT,
+    Kind,
+    System,
+    ProcessorArgument,
+)
 from datashark_core.filesystem import prepend_workdir
 
 
 NAME = 'hasher'
 LOGGER = LOGGING_MANAGER.get_logger(NAME)
+ALGORITHMS = '\n' + indent(
+    '\n'.join(sorted(algorithms_guaranteed)), ' ' * 16 + INDENT_UNIT
+)
 
 
 class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
@@ -27,7 +36,7 @@ class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
             'value': 'md5,sha1',
             'required': False,
             'description': f"""
-                Comma separated list of hashers among {algorithms_guaranteed}
+                Comma separated list of hashers among{ALGORITHMS}
             """,
         },
         {
