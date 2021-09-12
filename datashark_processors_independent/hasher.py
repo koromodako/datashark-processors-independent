@@ -108,7 +108,7 @@ class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
                 if not file.is_file():
                     continue
                 # compute file relative path or name
-                fpath = file.relative_to(filepath) if is_dir else file.stem
+                fpath = file.relative_to(filepath) if is_dir else file.name
                 # compute file digests
                 hexdigests = ','.join(await self.__process_file(hashers, file))
                 # write line to output file
