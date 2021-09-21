@@ -14,7 +14,7 @@ from datashark_core.model.api import (
     System,
     ProcessorArgument,
 )
-from datashark_core.filesystem import prepend_workdir
+from datashark_core.filesystem import prepend_workdir, ensure_parent_dir
 
 
 NAME = 'hasher'
@@ -91,7 +91,7 @@ class HasherProcessor(ProcessorInterface, metaclass=ProcessorMeta):
             self.config, arguments.get('output_file').get_value()
         )
         # create output file
-        output_file.parent.mkdir(parents=True, exist_ok=True)
+        ensure_parent_dir(output_file)
         async with async_open(str(output_file), 'w') as aiofstream_out:
             # write output file header
             headers = ','.join(list(sorted(hashers)) + ['filepath'])
