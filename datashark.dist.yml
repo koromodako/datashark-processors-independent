@@ -1,0 +1,7 @@
+datashark:
+  processors: #----------------------------------------------------[PROCESSORS]
+    yara:
+      bin:
+        linux: /usr/bin/yara
+        darwin: /usr/bin/yara
+        windows: Z:\datashark\tools\yara-v4.1.2-1693-win64\yara64.exe
