@@ -35,7 +35,7 @@ class YaraProcessor(ProcessorInterface, metaclass=ProcessorMeta):
         },
         {
             'name': 'define',
-            'kind': Kind.STRING,
+            'kind': Kind.STR,
             'required': False,
             'description': "Define external variable",
         },
@@ -48,7 +48,7 @@ class YaraProcessor(ProcessorInterface, metaclass=ProcessorMeta):
         },
         {
             'name': 'identifier',
-            'kind': Kind.STRING,
+            'kind': Kind.STR,
             'required': False,
             'description': "Print only rules named identifier",
         },
