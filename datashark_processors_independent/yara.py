@@ -183,7 +183,9 @@ class YaraProcessor(ProcessorInterface, metaclass=ProcessorMeta):
         try:
             system_name = System(system())
         except ValueError as exc:
-            raise ProcessorError("current system is not a valid system") from exc
+            raise ProcessorError(
+                "current system is not a valid system"
+            ) from exc
         proc = await self._start_subprocess(
             f'datashark.processors.yara.bin.{system_name.value.lower()}',
             [],

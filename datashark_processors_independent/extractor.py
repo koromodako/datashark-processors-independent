@@ -34,12 +34,6 @@ class ExtractorProcessor(ProcessorInterface, metaclass=ProcessorMeta):
     SYSTEM = System.INDEPENDENT
     ARGUMENTS = [
         {
-            'name': 'password',
-            'kind': Kind.STR,
-            'required': False,
-            'description': "Optional password for zip archives",
-        },
-        {
             'name': 'archive_path',
             'kind': Kind.PATH,
             'required': True,
@@ -56,11 +50,9 @@ class ExtractorProcessor(ProcessorInterface, metaclass=ProcessorMeta):
     Extractor processor, extract zip & tar archives
     """
 
-    async def __process_zip(self, archive_path, output_dir, password):
+    async def __process_zip(self, archive_path, output_dir):
         """Process zip archive"""
         with ZipFile(archive_path) as ziparchive:
-            if password:
-                ziparchive.setpassword(password)
             for name in ziparchive.namelist():
                 if __check_path_traversal(name):
                     continue
@@ -76,9 +68,6 @@ class ExtractorProcessor(ProcessorInterface, metaclass=ProcessorMeta):
 
     async def _run(self, arguments: Dict[str, ProcessorArgument]):
         """Process a file using hashers"""
-        password = arguments.get('password').get_value()
-        if password:
-            password = password.encode()
         # load and check filepath argument
         archive_path = prepend_workdir(
             self.config, arguments.get('archive_path').get_value()
@@ -92,7 +81,9 @@ class ExtractorProcessor(ProcessorInterface, metaclass=ProcessorMeta):
         # create output directory if needed
         output_dir.mkdir(parents=True, exist_ok=True)
         # determine if is zip archive
-        if archive_path.suffix == '.zip':
-            self.__process_zip(archive_path, output_dir, password)
-        else:
-            self.__process_tar(archive_path, output_dir)
+        process_func = (
+            self.__process_zip
+            if archive_path.suffix == '.zip'
+            else self.__process_tar
+        )
+        process_func(archive_path, output_dir)
